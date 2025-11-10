@@ -13,7 +13,7 @@ env:
   AWS_REGION: eu-west-1
   TF_BUCKET: pgr301-terraform-state
   TF_KEY: infra-s3/terraform.tfstate
-  BUCKET_NAME: kandidat-samer-data   # <-- pin lowercase
+  BUCKET_NAME: kkandidat-12345-data   # <-- pin lowercase
 
 jobs:
   terraform:
