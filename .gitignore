@@ -11,3 +11,6 @@ override.tf.json
 *.tar
 *.tar.gz
 sam-installation/
+.terraform/
+*.tfstate
+*.tfstate.*
