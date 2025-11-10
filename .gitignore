@@ -6,3 +6,8 @@ crash.log
 override.tf
 override.tf.json
 .terraform.lock.hcl
+# Dev tools & archives
+*.zip
+*.tar
+*.tar.gz
+sam-installation/
