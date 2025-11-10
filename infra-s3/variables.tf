@@ -4,7 +4,7 @@ variable "aws_region" {
 }
 
 variable "bucket_name" {
-  type = string
+  type        = string
   description = "S3 bucket such as kandidat-123-data"
 }
 
