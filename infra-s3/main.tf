@@ -1,5 +1,11 @@
 terraform {
   required_version = ">= 1.5.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.20"
+    }
+  }
   backend "s3" {}
 }
 
@@ -9,6 +15,7 @@ provider "aws" {
 
 resource "aws_s3_bucket" "data" {
   bucket = var.bucket_name
+  tags   = local.common_tags
 }
 
 resource "aws_s3_bucket_versioning" "v" {
@@ -66,9 +73,4 @@ locals {
   }
 }
 
-resource "aws_s3_bucket_tagging" "tags" {
-  bucket = aws_s3_bucket.data.id
-  tag_set = [
-    for k, v in local.common_tags : { key = k, value = v }
-  ]
-}
+// Tagging is handled via the `tags` argument on the bucket resource in AWS provider v4+

@@ -1,12 +1,12 @@
 name: SAM CI/CD
 
+# Trigger only on pushes to main affecting the SAM project or this workflow file
 on:
-  pull_request:
-    branches: [ "main" ]
-    paths: [ "sam-comprehend/**", ".github/workflows/sam-deploy.yml" ]
   push:
     branches: [ "main" ]
-    paths: [ "sam-comprehend/**", ".github/workflows/sam-deploy.yml" ]
+    paths:
+      - "sam-comprehend/**"
+      - ".github/workflows/sam-deploy.yml"
 
 env:
   AWS_REGION: eu-west-1
