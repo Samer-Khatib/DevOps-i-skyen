@@ -19,7 +19,9 @@ resource "aws_s3_bucket" "data" {
 
 resource "aws_s3_bucket_versioning" "v" {
   bucket = aws_s3_bucket.data.id
-  versioning_configuration { status = "Enabled" }
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
 resource "aws_s3_bucket_lifecycle_configuration" "lc" {
@@ -29,15 +31,17 @@ resource "aws_s3_bucket_lifecycle_configuration" "lc" {
     id     = "midlertidig-rule"
     status = "Enabled"
 
-    filter { prefix = "midlertidig/" }
+    filter {
+      prefix = "midlertidig/"
+    }
 
     transition {
-      days          = var.transition_days   # must be >= 30 for STANDARD_IA
+      days          = var.transition_days
       storage_class = "STANDARD_IA"
     }
 
     expiration {
-      days = var.expire_days               # should be > transition_days
+      days = var.expire_days
     }
   }
 }
