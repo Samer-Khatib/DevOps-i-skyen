@@ -1,6 +1,7 @@
 name: SAM Deploy
 
 on:
+  workflow_dispatch: {}
   pull_request:
     branches: [ "main" ]
     paths:
@@ -14,7 +15,7 @@ on:
 
 env:
   AWS_REGION: eu-west-1
-  S3_BUCKET_NAME: kandidat-12345-data   
+  S3_BUCKET_NAME: kandidat-12345-data
   STACK_NAME: sam-sentiment
 
 jobs:
