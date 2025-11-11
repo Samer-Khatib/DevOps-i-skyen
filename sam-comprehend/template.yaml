@@ -11,8 +11,8 @@ Globals:
 Parameters:
   S3BucketName:
     Type: String
-    Default: pgr301-sentiment-data
-    Description: S3 bucket for storing sentiment analysis results
+    Description: Target bucket for analysis results (must exist)
+    Default: ""  # keep empty; we pass the real name at deploy
 
 Resources:
   SentimentAnalysisFunction:
@@ -41,9 +41,8 @@ Resources:
 
 Outputs:
   SentimentAnalysisApi:
-    Description: "API Gateway endpoint URL for sentiment analysis"
+    Description: API Gateway endpoint URL for sentiment analysis
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod/analyze/"
-
   SentimentAnalysisFunction:
-    Description: "Sentiment Analysis Lambda Function ARN"
+    Description: Sentiment Analysis Lambda Function ARN
     Value: !GetAtt SentimentAnalysisFunction.Arn

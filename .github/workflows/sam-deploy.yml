@@ -1,7 +1,11 @@
-name: SAM CI/CD
+name: SAM Deploy
 
-# Trigger only on pushes to main affecting the SAM project or this workflow file
 on:
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "sam-comprehend/**"
+      - ".github/workflows/sam-deploy.yml"
   push:
     branches: [ "main" ]
     paths:
@@ -10,10 +14,8 @@ on:
 
 env:
   AWS_REGION: eu-west-1
-  # Change this if you prefer; keep it deterministic:
-  STACK_NAME: aialpha-sentiment-${{ github.actor }}
-  # If you named the bucket differently, edit here:
-  S3_BUCKET_NAME: kandidat-${{ github.actor }}-data
+  S3_BUCKET_NAME: kandidat-12345-data   
+  STACK_NAME: sam-sentiment
 
 jobs:
   sam:
@@ -28,28 +30,30 @@ jobs:
         with:
           python-version: "3.11"
 
-      - uses: aws-actions/setup-sam@v2
+      - name: Install SAM CLI
+        uses: aws-actions/setup-sam@v2
 
-      - uses: aws-actions/configure-aws-credentials@v4
+      - name: Validate
+        run: sam validate --region $AWS_REGION
+
+      - name: Build
+        run: sam build
+
+      - name: Configure AWS (only on main)
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: SAM Validate
-        run: sam validate --region $AWS_REGION
-
-      - name: SAM Build
-        run: sam build
-
-      - name: SAM Deploy (main only)
+      - name: Deploy (only on main)
         if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
         run: |
           sam deploy \
-            --stack-name "$STACK_NAME" \
-            --resolve-s3 \
-            --no-confirm-changeset \
-            --no-fail-on-empty-changeset \
-            --parameter-overrides S3BucketName="$S3_BUCKET_NAME" \
+            --stack-name $STACK_NAME \
+            --parameter-overrides S3BucketName=$S3_BUCKET_NAME \
+            --region $AWS_REGION \
             --capabilities CAPABILITY_IAM \
-            --region "$AWS_REGION"
+            --no-confirm-changeset \
+            --no-fail-on-empty-changeset
