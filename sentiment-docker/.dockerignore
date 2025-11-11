@@ -1,0 +1,10 @@
+.git
+.github
+.aws
+.idea
+.vscode
+target
+**/target
+node_modules
+Dockerfile
+.env
