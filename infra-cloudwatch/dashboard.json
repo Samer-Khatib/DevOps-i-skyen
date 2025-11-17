@@ -1,0 +1,50 @@
+{
+  "widgets": [
+    {
+      "type": "metric",
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "region": "eu-west-1",
+        "title": "Request Count (Sum)",
+        "stat": "Sum",
+        "period": 60,
+        "metrics": [
+          ["SentimentApp-12345", "RequestCount"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "view": "timeSeries",
+        "region": "eu-west-1",
+        "title": "Average Latency (s)",
+        "stat": "Average",
+        "period": 60,
+        "yAxis": {"left": {"min": 0}},
+        "metrics": [
+          ["SentimentApp-12345", "Latency"]
+        ]
+      }
+    },
+    {
+      "type": "metric",
+      "width": 12,
+      "height": 6,
+      "properties": {
+        "view": "singleValue",
+        "region": "eu-west-1",
+        "title": "Current Sentiment Score (Gauge)",
+        "stat": "Average",
+        "period": 60,
+        "metrics": [
+          ["SentimentApp-12345", "SentimentScore"]
+        ]
+      }
+    }
+  ]
+}
