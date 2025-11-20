@@ -1,50 +1,62 @@
 package com.aialpha.sentiment.service;
 
+import com.aialpha.sentiment.config.S3Properties;
 import com.aialpha.sentiment.model.SentimentResult;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
-import java.time.LocalDate;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 @Service
 public class S3StorageService {
 
-    private final S3Client s3Client;
-    private final ObjectMapper objectMapper;
+    private final S3Client s3;
+    private final ObjectMapper mapper = new ObjectMapper();
+    private final S3Properties props;
 
-    @Value("${aws.s3.bucket-name}")
-    private String bucketName;
-
-    public S3StorageService(S3Client s3Client, ObjectMapper objectMapper) {
-        this.s3Client = s3Client;
-        this.objectMapper = objectMapper;
+    public S3StorageService(S3Properties props) {
+        this.props = props;
+        String reg = System.getenv().getOrDefault("AWS_REGION",
+                     System.getenv().getOrDefault("AWS_DEFAULT_REGION", "eu-west-1"));
+        this.s3 = S3Client.builder()
+                .region(Region.of(reg))
+                .credentialsProvider(DefaultCredentialsProvider.create())
+                .build();
     }
 
     public void storeResult(SentimentResult result) {
-        try {
-            String json = objectMapper.writeValueAsString(result);
-            String key = generateS3Key(result.getRequestId());
+        String prefix = props.getResultsPrefix();
 
-            PutObjectRequest putRequest = PutObjectRequest.builder()
-                    .bucket(bucketName)
+        Instant now = Instant.now();
+        String y = DateTimeFormatter.ofPattern("yyyy").withZone(ZoneOffset.UTC).format(now);
+        String m = DateTimeFormatter.ofPattern("MM").withZone(ZoneOffset.UTC).format(now);
+
+        // use getter (POJO), fall back to random if null/blank
+        String rid = null;
+        try { rid = result.getRequestId(); } catch (Exception ignored) {}
+        if (rid == null || rid.isBlank()) rid = UUID.randomUUID().toString();
+
+        String key = String.format("%s/%s/%s/%s.json", prefix, y, m, rid);
+
+        try {
+            String body = mapper.writeValueAsString(result);
+            PutObjectRequest put = PutObjectRequest.builder()
+                    .bucket(props.getBucketName())
                     .key(key)
                     .contentType("application/json")
                     .build();
-
-            s3Client.putObject(putRequest, RequestBody.fromString(json));
+            s3.putObject(put, RequestBody.fromString(body, StandardCharsets.UTF_8));
         } catch (Exception e) {
-            throw new RuntimeException("Failed to store result in S3: " + e.getMessage(), e);
+            throw new RuntimeException("S3 putObject failed: " + e.getMessage(), e);
         }
-    }
-
-    private String generateS3Key(String requestId) {
-        LocalDate today = LocalDate.now();
-        String yearMonth = today.format(DateTimeFormatter.ofPattern("yyyy/MM"));
-        return String.format("sentiment-results/%s/%s.json", yearMonth, requestId);
     }
 }
