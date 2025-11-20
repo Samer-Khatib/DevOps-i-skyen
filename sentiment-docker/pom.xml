@@ -25,7 +25,6 @@
 
     <dependencyManagement>
         <dependencies>
-            <!-- AWS SDK BOM for consistent version management -->
             <dependency>
                 <groupId>software.amazon.awssdk</groupId>
                 <artifactId>bom</artifactId>
@@ -37,37 +36,38 @@
     </dependencyManagement>
 
     <dependencies>
-        <!-- Spring Boot Starter -->
+
+        <!-- Spring Web -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Boot Actuator (health checks) -->
+        <!-- Actuator -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-actuator</artifactId>
         </dependency>
 
-        <!-- Micrometer CloudWatch Registry for metrics export -->
+        <!-- Metrics to CloudWatch -->
         <dependency>
             <groupId>io.micrometer</groupId>
             <artifactId>micrometer-registry-cloudwatch2</artifactId>
         </dependency>
 
-        <!-- AWS SDK v2 - S3 -->
+        <!-- AWS SDK: S3 -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>s3</artifactId>
         </dependency>
 
-        <!-- AWS SDK v2 - Bedrock Runtime -->
+        <!-- AWS SDK: Bedrock Runtime -->
         <dependency>
             <groupId>software.amazon.awssdk</groupId>
             <artifactId>bedrockruntime</artifactId>
         </dependency>
 
-        <!-- JSON Processing -->
+        <!-- JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
@@ -79,6 +79,7 @@
             <artifactId>spring-boot-starter-test</artifactId>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 
     <build>

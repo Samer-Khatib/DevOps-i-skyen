@@ -4,47 +4,43 @@ import io.micrometer.cloudwatch2.CloudWatchConfig;
 import io.micrometer.cloudwatch2.CloudWatchMeterRegistry;
 import io.micrometer.core.instrument.Clock;
 import io.micrometer.core.instrument.MeterRegistry;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.cloudwatch.CloudWatchAsyncClient;
 
 import java.time.Duration;
-import java.util.Map;
 
 @Configuration
 public class MetricsConfig {
+
     @Bean
-    public CloudWatchAsyncClient cloudWatchAsyncClient() {
-        return CloudWatchAsyncClient
-                .builder()
-                .region(Region.EU_WEST_1)
+    public CloudWatchAsyncClient cloudWatchAsyncClient(
+            @Value("${AWS_REGION:eu-west-1}") String region) {
+        return CloudWatchAsyncClient.builder()
+                .region(Region.of(region))
                 .build();
     }
 
     @Bean
-    public MeterRegistry getMeterRegistry() {
-        CloudWatchConfig cloudWatchConfig = setupCloudWatchConfig();
-        return
-                new CloudWatchMeterRegistry(
-                        cloudWatchConfig,
-                        Clock.SYSTEM,
-                        cloudWatchAsyncClient());
-    }
+    public CloudWatchConfig cloudWatchConfig(
+            @Value("${metrics.cloudwatch.namespace:}") String namespaceFromProps,
+            @Value("${metrics.cloudwatch.step:PT1M}") Duration step) {
+        final String ns = (namespaceFromProps == null || namespaceFromProps.isBlank())
+                ? System.getenv().getOrDefault("METRICS_NAMESPACE", "SentimentApp-12345")
+                : namespaceFromProps;
 
-    private CloudWatchConfig setupCloudWatchConfig() {
         return new CloudWatchConfig() {
-            // TODO: VIKTIG! Endre "SentimentApp" til ditt kandidatnummer (f.eks. "kandidat123")
-            // Du MÅ bruke SAMME namespace når du lager CloudWatch Dashboard i Terraform!
-            private Map<String, String> configuration = Map.of(
-                    "cloudwatch.namespace", "SentimentApp",
-                    "cloudwatch.step", Duration.ofSeconds(5).toString());
-
-            @Override
-            public String get(String key) {
-                return configuration.get(key);
-            }
+            @Override public String namespace() { return ns; }
+            @Override public Duration step() { return step; }
+            @Override public String get(String k) { return null; }
         };
     }
 
+    @Bean
+    public MeterRegistry meterRegistry(CloudWatchConfig config,
+                                       CloudWatchAsyncClient client) {
+        return new CloudWatchMeterRegistry(config, Clock.SYSTEM, client);
+    }
 }

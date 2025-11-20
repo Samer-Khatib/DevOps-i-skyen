@@ -20,8 +20,8 @@ public class SentimentController {
     private final SentimentMetrics sentimentMetrics;
 
     public SentimentController(BedrockService bedrockService,
-                              S3StorageService s3StorageService,
-                              SentimentMetrics sentimentMetrics) {
+                               S3StorageService s3StorageService,
+                               SentimentMetrics sentimentMetrics) {
         this.bedrockService = bedrockService;
         this.s3StorageService = s3StorageService;
         this.sentimentMetrics = sentimentMetrics;
@@ -30,11 +30,12 @@ public class SentimentController {
     @PostMapping("/analyze")
     public ResponseEntity<SentimentResult> analyzeSentiment(@RequestBody AnalysisRequest request) {
         long startTime = System.currentTimeMillis();
+
         try {
             // Call Bedrock to analyze sentiment
             List<CompanySentiment> companies = bedrockService.analyzeSentiment(request.getText());
 
-            // Create result
+            // Build result object
             SentimentResult result = new SentimentResult(
                     request.getRequestId(),
                     "AI-Powered (AWS Bedrock + Claude)",
@@ -45,9 +46,10 @@ public class SentimentController {
             // Store in S3
             s3StorageService.storeResult(result);
 
-            // Record metrics (if implemented by student)
+            // Record metrics for each company
             long duration = System.currentTimeMillis() - startTime;
             sentimentMetrics.recordCompaniesDetected(companies.size());
+
             for (CompanySentiment company : companies) {
                 sentimentMetrics.recordAnalysis(company.getSentiment(), company.getCompany());
                 sentimentMetrics.recordConfidence(company.getConfidence(), company.getSentiment(), company.getCompany());
@@ -55,6 +57,7 @@ public class SentimentController {
             }
 
             return ResponseEntity.ok(result);
+
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }

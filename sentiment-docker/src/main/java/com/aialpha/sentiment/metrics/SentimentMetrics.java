@@ -1,23 +1,24 @@
 package com.aialpha.sentiment.metrics;
 
-import io.micrometer.core.instrument.MeterRegistry;
-import io.micrometer.core.instrument.Counter;
+import io.micrometer.core.instrument.*;
 import org.springframework.stereotype.Component;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Component
 public class SentimentMetrics {
 
     private final MeterRegistry meterRegistry;
+    private final AtomicInteger lastCompanyCount = new AtomicInteger(0);
 
-    // Constructor injection of MeterRegistry
     public SentimentMetrics(MeterRegistry meterRegistry) {
         this.meterRegistry = meterRegistry;
+        Gauge.builder("sentiment.company.last_count", lastCompanyCount, AtomicInteger::get)
+                .description("Company count from the last analysis")
+                .register(meterRegistry);
     }
 
-    /**
-     * Example implementation: Counter for sentiment analysis requests
-     * This counter tracks the total number of sentiment analyses by sentiment type and company
-     */
     public void recordAnalysis(String sentiment, String company) {
         Counter.builder("sentiment.analysis.total")
                 .tag("sentiment", sentiment)
@@ -28,14 +29,28 @@ public class SentimentMetrics {
     }
 
     public void recordDuration(long milliseconds, String company, String model) {
-        // TODO: Record timer
+        Timer.builder("bedrock.latency.seconds")          // <-- IMPORTANT
+                .description("Latency of the analysis pipeline")
+                .tag("company", company)
+                .tag("model", model)
+                .publishPercentileHistogram()
+                .register(meterRegistry)
+                .record(milliseconds, TimeUnit.MILLISECONDS);
     }
 
     public void recordCompaniesDetected(int count) {
-        // TODO: Update gauge
+        lastCompanyCount.set(count);
     }
 
     public void recordConfidence(double confidence, String sentiment, String company) {
-        // TODO: Record distribution summary
+        DistributionSummary.builder("sentiment.confidence")
+                .description("Confidence distribution across results (0.0-1.0)")
+                .tag("sentiment", sentiment)
+                .tag("company", company)
+                .maximumExpectedValue(1.0)
+                .minimumExpectedValue(0.0)
+                .publishPercentileHistogram()
+                .register(meterRegistry)
+                .record(confidence);
     }
 }

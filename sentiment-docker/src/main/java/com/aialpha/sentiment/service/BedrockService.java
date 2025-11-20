@@ -25,12 +25,18 @@ public class BedrockService {
         this.objectMapper = objectMapper;
     }
 
+
     public List<CompanySentiment> analyzeSentiment(String text) {
         try {
-            // Build the prompt for Nova
+            // Artificial delay to trigger CloudWatch latency alarm
+            Thread.sleep(6000); // 6 seconds > threshold
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+
+        try {
             String prompt = buildSentimentPrompt(text);
 
-            // Create request payload for Nova API via Bedrock
             String requestBody = String.format("""
                 {
                     "schemaVersion": "messages-v1",
@@ -52,7 +58,6 @@ public class BedrockService {
                 }
                 """, escapeJson(prompt));
 
-            // Invoke Bedrock model
             InvokeModelRequest request = InvokeModelRequest.builder()
                     .modelId(MODEL_ID)
                     .body(SdkBytes.fromUtf8String(requestBody))
@@ -61,7 +66,6 @@ public class BedrockService {
             InvokeModelResponse response = bedrockClient.invokeModel(request);
             String responseBody = response.body().asUtf8String();
 
-            // Parse Nova's response
             return parseNovaResponse(responseBody);
 
         } catch (Exception e) {
@@ -69,10 +73,6 @@ public class BedrockService {
         }
     }
 
-    /**
-     * Builds a one-shot prompt that asks Nova to analyze sentiment
-     * for each Big Tech company mentioned in the text.
-     */
     private String buildSentimentPrompt(String text) {
         return String.format("""
             Analyze the sentiment for each Big Tech company mentioned in the following text.
@@ -105,13 +105,9 @@ public class BedrockService {
             """, text);
     }
 
-    /**
-     * Parses Nova's JSON response and extracts company sentiment data.
-     */
     private List<CompanySentiment> parseNovaResponse(String responseBody) throws Exception {
         JsonNode root = objectMapper.readTree(responseBody);
 
-        // Nova's response structure: { "output": { "message": { "content": [{ "text": "..." }] } } }
         JsonNode outputNode = root.path("output");
         if (outputNode.isMissingNode()) {
             throw new RuntimeException("Invalid response structure from Nova: missing 'output' field");
@@ -127,10 +123,8 @@ public class BedrockService {
             throw new RuntimeException("Invalid response structure from Nova: missing or empty 'content' array");
         }
 
-        // Extract the text content (which should be our JSON)
         String textContent = contentArray.get(0).path("text").asText();
 
-        // Parse the JSON that Nova returned
         JsonNode sentimentData = objectMapper.readTree(textContent);
         JsonNode companiesArray = sentimentData.path("companies");
 
@@ -150,9 +144,6 @@ public class BedrockService {
         return results;
     }
 
-    /**
-     * Escapes special characters in JSON strings.
-     */
     private String escapeJson(String text) {
         return text.replace("\\", "\\\\")
                    .replace("\"", "\\\"")
